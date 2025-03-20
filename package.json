@@ -17,9 +17,14 @@
   },
   "license": "Apache-2.0",
   "author": "Valery Gantchev",
-  "type": "commonjs",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@polkadot-api/descriptors": "file:.papi/descriptors",
+    "@polkadot/api": "^15.7.2",
+    "polkadot-api": "^1.9.4"
   }
 }
