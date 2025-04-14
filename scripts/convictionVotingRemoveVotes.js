@@ -23,19 +23,35 @@ async function main() {
         let txs = [];
 
         const votingEntries = await client.query.convictionVoting.votingFor.entries();
-
         log(`votingFor entries found: ${votingEntries.length}`);
+
+        // Get all referenda statuses
+        const referendumEntries = await client.query.convictionVoting.referendumInfoFor.entries();
+        const finishedReferenda = new Set();
+
+        referendumEntries.forEach(([storageKey, info]) => {
+            const referendumIndex = storageKey.args[0].toNumber(); // assuming it's Compact<u32>
+
+            // Only include referenda that are finished (Confirmed, TimedOut, Rejected, Approved)
+            if (info.isFinished) {
+                finishedReferenda.add(referendumIndex);
+            }
+        });
 
         votingEntries.forEach(([key, voting]) => {
             const [address, classOf] = key.args.map(k => k.toHuman());
 
             if (voting.isCasting) {
-                voting.asCasting.votes.map(v => {
-                    txs.push(client.tx.convictionVoting.forceRemoveVote(address, classOf, v[0].toString()));
+                voting.asCasting.votes.forEach(([refIndex, _]) => {
+                    if (finishedReferenda.has(refIndex.toNumber())) {
+                        txs.push(client.tx.convictionVoting.forceRemoveVote(address, classOf, refIndex.toString()));
+                    }
                 });
             } else {
-                voting.asDelegating.votes?.map(v => {
-                    txs.push(client.tx.convictionVoting.forceRemoveVote(address, classOf, v[0].toString()));
+                voting.asDelegating.votes?.forEach(([refIndex, _]) => {
+                    if (finishedReferenda.has(refIndex.toNumber())) {
+                        txs.push(client.tx.convictionVoting.forceRemoveVote(address, classOf, refIndex.toString()));
+                    }
                 });
             }
         });
@@ -61,7 +77,7 @@ async function main() {
         let batchesCountProofSize = allTxsProofSize.div(proofSizeLimit).toNumber() + 1;
         log(`Max ProofSize requires splitting in ${batchesCountProofSize} batches`);
 
-        const batchesCount = Math.max(batchesCountRefTime, batchesCountProofSize);
+        const batchesCount = Math.max(batchesCountRefTime, batchesCountProofSize) + 3;
         log(`Splitting the txs into ${batchesCount} batches...`)
 
         let perBatch = Math.ceil(txs.length / batchesCount);
