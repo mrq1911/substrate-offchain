@@ -26,14 +26,14 @@ async function main() {
         log(`votingFor entries found: ${votingEntries.length}`);
 
         // Get all referenda statuses
-        const referendumEntries = await client.query.convictionVoting.referendumInfoFor.entries();
-        const finishedReferenda = new Set();
+        let referendumEntries = await client.query.referenda.referendumInfoFor.entries();
+        let finishedReferenda = new Set();
 
         referendumEntries.forEach(([storageKey, info]) => {
             const referendumIndex = storageKey.args[0].toNumber(); // assuming it's Compact<u32>
 
             // Only include referenda that are finished (Confirmed, TimedOut, Rejected, Approved)
-            if (info.isFinished) {
+            if (info.unwrap().type !== "Ongoing") {
                 finishedReferenda.add(referendumIndex);
             }
         });
