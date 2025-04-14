@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import {newPjsClient, sendAndWaitFinalization} from "./clients/pjs.js";
+import {newPjsClient, sendTx} from "./clients/pjs.js";
 import {Keyring} from "@polkadot/api";
 import {cryptoWaitReady} from "@polkadot/util-crypto";
 import {BN} from "bn.js";
@@ -77,7 +77,8 @@ async function main() {
         let batchesCountProofSize = allTxsProofSize.div(proofSizeLimit).toNumber() + 1;
         log(`Max ProofSize requires splitting in ${batchesCountProofSize} batches`);
 
-        const batchesCount = Math.max(batchesCountRefTime, batchesCountProofSize) + 3;
+        // Multiply by 3 to leave some space in the block for regular txs
+        const batchesCount = Math.max(batchesCountRefTime, batchesCountProofSize) * 3;
         log(`Splitting the txs into ${batchesCount} batches...`)
 
         let perBatch = Math.ceil(txs.length / batchesCount);
@@ -86,7 +87,7 @@ async function main() {
 
         for (const [index, batch] of batches.entries()) {
             log(`Processing batch ${index + 1}`);
-            await sendAndWaitFinalization({ from: signer, tx: batch});
+            await sendTx({ from: signer, tx: batch});
         }
 
         log("Finished convictionVotingRemoveVotes.");

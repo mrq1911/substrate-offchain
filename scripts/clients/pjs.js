@@ -10,7 +10,7 @@ export async function newPjsClient() {
     return client;
 }
 
-export async function sendAndWaitFinalization({ from, tx, printEvents = [] }) {
+export async function sendTx({ from, tx, printEvents = [] }) {
     return new Promise((resolve, reject) => {
         tx.signAndSend(from, (receipt) => {
             const { status, events = [], dispatchError } = receipt;
@@ -23,10 +23,7 @@ export async function sendAndWaitFinalization({ from, tx, printEvents = [] }) {
                     .forEach(({ event: { data, method, section } }) => {
                         console.log(`${section}.${method} ${JSON.stringify(data)}`);
                     });
-            }
 
-            if (status.isFinalized) {
-                console.log(`Finalized at block: ${status.asFinalized.toHex()}`);
                 resolve(receipt);
             }
 
