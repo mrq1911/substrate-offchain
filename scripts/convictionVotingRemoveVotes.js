@@ -1,10 +1,6 @@
 #!/usr/bin/env node
-import {newPjsClient, sendTx} from "./clients/pjs.js";
-import {Keyring} from "@polkadot/api";
-import {cryptoWaitReady} from "@polkadot/util-crypto";
+import {newPjsClient, sendTx, createSignerFromJson} from "./clients/pjs.js";
 import {BN} from "bn.js";
-
-const ACCOUNT_SECRET = process.env.ACCOUNT_SECRET || "//Alice";
 
 function log(text) {
     console.log(text);
@@ -15,10 +11,12 @@ const chunkify = (a, size) => Array(Math.ceil(a.length / size)).fill(a).map((_, 
 async function main() {
     try {
         log("Started convictionVotingRemoveVotes...");
-        await cryptoWaitReady();
+
+        // First, create a client
         let client = await newPjsClient();
-        const keyring = new Keyring({type: "sr25519"});
-        const signer = keyring.addFromUri(ACCOUNT_SECRET);
+
+        // Then create signer from JSON keystore file
+        const signer = await createSignerFromJson();
 
         let txs = [];
 
@@ -77,8 +75,8 @@ async function main() {
         let batchesCountProofSize = allTxsProofSize.div(proofSizeLimit).toNumber() + 1;
         log(`Max ProofSize requires splitting in ${batchesCountProofSize} batches`);
 
-        // Multiply by 3 to leave some space in the block for regular txs
-        const batchesCount = Math.max(batchesCountRefTime, batchesCountProofSize) * 3;
+        // Multiply by 2 to leave some space in the block for regular txs
+        const batchesCount = Math.max(batchesCountRefTime, batchesCountProofSize) * 2;
         log(`Splitting the txs into ${batchesCount} batches...`)
 
         let perBatch = Math.ceil(txs.length / batchesCount);
