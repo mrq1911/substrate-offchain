@@ -18,6 +18,10 @@ async function main() {
         // Then create signer from JSON keystore file
         const signer = await createSignerFromJson();
 
+        // check initial signer balance
+        const {data} = await client.query.system.account(signer.address);
+        console.log(`Balance: ${data.free.toHuman()}`);
+
         let txs = [];
 
         const votingEntries = await client.query.convictionVoting.votingFor.entries();
